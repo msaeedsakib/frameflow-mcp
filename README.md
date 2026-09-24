@@ -33,7 +33,7 @@ Any other MCP client:
 
 ## Tools
 
-Every generating tool writes to a local `output_path` and returns it. Video tools return a `job_id` immediately; poll `get_video_job` until it is `done`.
+Every generating tool writes to a local `output_path` and returns it. Images come back as JPEG. Video tools return a `job_id` immediately; poll `get_video_job` until it is `done`.
 
 | Tool | Models | Purpose |
 |---|---|---|

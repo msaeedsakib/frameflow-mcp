@@ -25,7 +25,7 @@ The `frameflow` MCP server runs Google image and video models on the user's own 
 
 ## Argument rules
 
-- Paths: absolute or `~/...`. Parent directories of `output_path` are created. Use `.png` for images and `.mp4` for videos.
+- Paths: absolute or `~/...`. Parent directories of `output_path` are created. Use `.jpg` for images (the API returns JPEG; the extension is corrected to match the returned format, so check the `path` in the response) and `.mp4` for videos.
 - `aspect_ratio` for images: `1:1`, `3:2`, `2:3`, `4:3`, `3:4`, `4:5`, `5:4`, `16:9`, `9:16`, `21:9`. For video: `16:9` or `9:16`.
 - `image_size`: `1K`, `2K`, `4K` (Lite: `1K` max).
 - `resolution`: Omni `360p` to `4k`; Veo `720p` or `1080p`.

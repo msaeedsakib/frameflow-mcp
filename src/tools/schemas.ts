@@ -4,7 +4,10 @@ import { allowedModelsFor, generatingTools, type ToolName } from "../models";
 const modelFor = (tool: ToolName) =>
   z.enum(allowedModelsFor(tool)).optional().describe("Model id. Omit to use the default set with set_default_model.");
 
-const outputPath = z.string().min(1).describe("Absolute or ~ path to write the result to. Parent directories are created.");
+const outputPath = z
+  .string()
+  .min(1)
+  .describe("Absolute or ~ path to write the result to. Parent directories are created. Images are JPEG; the extension is corrected to match the returned format.");
 const prompt = z.string().min(1);
 
 const imageOptions = {
