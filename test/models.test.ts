@@ -10,8 +10,8 @@ test("every tool has at least one model and only known ids", () => {
 });
 
 test("extend and edit are Omni only, images are Nano Banana only", () => {
-  expect(allowedModelsFor("extend_video")).toEqual(["gemini-omni-1.1-flash"]);
-  expect(allowedModelsFor("edit_video")).toEqual(["gemini-omni-1.1-flash"]);
+  expect(allowedModelsFor("extend_video")).toEqual(["gemini-omni-1.1-flash-preview"]);
+  expect(allowedModelsFor("edit_video")).toEqual(["gemini-omni-1.1-flash-preview"]);
   expect(allowedModelsFor("generate_image").every((id) => modelById(id).family === "nano-banana")).toBe(true);
   expect(allowedModelsFor("generate_video")).toContain("veo-3.1-generate-001");
 });

@@ -5,7 +5,7 @@ import { Jobs, type JobPoll } from "../src/jobs";
 import { useTempHome } from "./helpers";
 
 const home = useTempHome();
-const base = { tool: "generate_video", model: "gemini-omni-1.1-flash" };
+const base = { tool: "generate_video", model: "gemini-omni-1.1-flash-preview" };
 
 test("running until the poll reports data, then writes the file once", async () => {
   let calls = 0;

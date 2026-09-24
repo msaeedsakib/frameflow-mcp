@@ -33,7 +33,7 @@ Any other MCP client:
 
 ## Tools
 
-Every generating tool writes to a local `output_path` and returns it. Images come back as JPEG. Video tools return a `job_id` immediately; poll `get_video_job` until it is `done`.
+Every generating tool writes to a local `output_path` and returns it. Video tools return a `job_id` immediately; poll `get_video_job` until it is `done`.
 
 | Tool | Models | Purpose |
 |---|---|---|
@@ -50,7 +50,7 @@ Every generating tool writes to a local `output_path` and returns it. Images com
 
 No default model is built in. Ask your agent to pick defaults once (`list_models` then `set_default_model`); they are stored in `~/.config/frameflow-mcp/config.json`.
 
-Model ids: `gemini-3.1-flash-image`, `gemini-3-pro-image`, `gemini-3.1-flash-lite-image`, `gemini-omni-1.1-flash`, `veo-3.1-generate-001`, `veo-3.1-fast-generate-001`, `veo-3.1-lite-generate-preview`.
+Model ids: `gemini-3.1-flash-image`, `gemini-3-pro-image`, `gemini-3.1-flash-lite-image`, `gemini-omni-1.1-flash-preview`, `veo-3.1-generate-001`, `veo-3.1-fast-generate-001`.
 
 ## Where things are written
 

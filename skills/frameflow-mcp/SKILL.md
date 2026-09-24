@@ -20,12 +20,12 @@ The `frameflow` MCP server runs Google image and video models on the user's own 
 | Tool | Good default | When to pick another |
 |---|---|---|
 | `generate_image`, `edit_image` | `gemini-3.1-flash-image` (Nano Banana 2) | `gemini-3-pro-image` for text-heavy, brand-accurate or complex compositions; `gemini-3.1-flash-lite-image` for cheap drafts (1K max) |
-| `generate_video`, `animate_image`, `generate_video_from_references` | `gemini-omni-1.1-flash` | `veo-3.1-generate-001` for native audio and 8s clips with `generate_audio`; `veo-3.1-lite-generate-preview` for cheap drafts |
-| `extend_video`, `edit_video` | `gemini-omni-1.1-flash` | Omni only |
+| `generate_video`, `animate_image`, `generate_video_from_references` | `gemini-omni-1.1-flash-preview` | `veo-3.1-generate-001` for native audio and 8s clips with `generate_audio`; `veo-3.1-fast-generate-001` for cheaper, faster drafts |
+| `extend_video`, `edit_video` | `gemini-omni-1.1-flash-preview` | Omni only |
 
 ## Argument rules
 
-- Paths: absolute or `~/...`. Parent directories of `output_path` are created. Use `.jpg` for images (the API returns JPEG; the extension is corrected to match the returned format, so check the `path` in the response) and `.mp4` for videos.
+- Paths: absolute or `~/...`. Parent directories of `output_path` are created. Use `.png` for images and `.mp4` for videos. The extension is corrected to match the format the API returns, so use the `path` from the response.
 - `aspect_ratio` for images: `1:1`, `3:2`, `2:3`, `4:3`, `3:4`, `4:5`, `5:4`, `16:9`, `9:16`, `21:9`. For video: `16:9` or `9:16`.
 - `image_size`: `1K`, `2K`, `4K` (Lite: `1K` max).
 - `resolution`: Omni `360p` to `4k`; Veo `720p` or `1080p`.

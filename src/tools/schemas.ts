@@ -7,7 +7,7 @@ const modelFor = (tool: ToolName) =>
 const outputPath = z
   .string()
   .min(1)
-  .describe("Absolute or ~ path to write the result to. Parent directories are created. Images are JPEG; the extension is corrected to match the returned format.");
+  .describe("Absolute or ~ path to write the result to. Parent directories are created. The extension is corrected to match the returned format.");
 const prompt = z.string().min(1);
 
 const imageOptions = {

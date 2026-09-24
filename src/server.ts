@@ -13,5 +13,10 @@ export function createServer(): McpServer {
 }
 
 export function serve(): void {
+  const toStderr = (...args: unknown[]) => console.error(...args);
+  console.log = toStderr;
+  console.info = toStderr;
+  console.debug = toStderr;
+  console.warn = toStderr;
   serveStdio(createServer);
 }

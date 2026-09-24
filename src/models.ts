@@ -28,10 +28,9 @@ export const models = [
   { id: "gemini-3.1-flash-image", family: "nano-banana", location: "global", label: "Nano Banana 2", tools: imageTools },
   { id: "gemini-3-pro-image", family: "nano-banana", location: "global", label: "Nano Banana Pro", tools: imageTools },
   { id: "gemini-3.1-flash-lite-image", family: "nano-banana", location: "global", label: "Nano Banana 2 Lite", tools: imageTools },
-  { id: "gemini-omni-1.1-flash", family: "omni", location: "global", label: "Gemini Omni 1.1 Flash", tools: omniVideoTools },
+  { id: "gemini-omni-1.1-flash-preview", family: "omni", location: "global", label: "Gemini Omni 1.1 Flash", tools: omniVideoTools },
   { id: "veo-3.1-generate-001", family: "veo", location: "us-central1", label: "Veo 3.1", tools: veoVideoTools },
   { id: "veo-3.1-fast-generate-001", family: "veo", location: "us-central1", label: "Veo 3.1 Fast", tools: veoVideoTools },
-  { id: "veo-3.1-lite-generate-preview", family: "veo", location: "us-central1", label: "Veo 3.1 Lite", tools: veoVideoTools },
 ] as const satisfies readonly ModelSpec[];
 
 export type ModelId = (typeof models)[number]["id"];
