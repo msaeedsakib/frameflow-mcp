@@ -62,18 +62,6 @@ Model ids: `gemini-3.1-flash-image`, `gemini-3-pro-image`, `gemini-3.1-flash-lit
 | `~/.cursor/mcp.json`, `~/.cursor/skills/frameflow-mcp/` | Cursor |
 | `~/.codex/config.toml` (or `$CODEX_HOME`), `~/.agents/skills/frameflow-mcp/` | Codex |
 
-## Development
-
-```sh
-bun install
-bun run typecheck
-bun test
-bun run build
-node dist/index.js --help
-```
-
-Releases: bump `version` in `package.json`, commit, tag `vX.Y.Z` and push the tag. GitHub Actions publishes to npm with provenance.
-
 ## License
 
 MIT
