@@ -27,8 +27,8 @@ Any other MCP client:
 ## Google Cloud setup
 
 1. Create or pick a project with billing enabled.
-2. Enable the Vertex AI API (`aiplatform.googleapis.com`).
-3. Create a service account, grant it **Vertex AI User** (`roles/aiplatform.user`), and download a JSON key.
+2. Enable the Gemini Enterprise Agent Platform API (`aiplatform.googleapis.com`).
+3. Create a service account, grant it **Agent Platform User** (`roles/aiplatform.user`), and download a JSON key.
 4. Run `setup` and point it at the key. The file is copied to `~/.config/frameflow-mcp/service-account.json` with owner-only permissions; you can delete the download.
 
 ## Tools

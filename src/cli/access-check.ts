@@ -14,7 +14,7 @@ export function classifyError(error: unknown, projectId: string): AccessResult {
   if (/SERVICE_DISABLED|has not been used in project|it is disabled/i.test(message)) {
     return {
       status: "api-disabled",
-      api: "Vertex AI API (Gemini Enterprise Agent Platform)",
+      api: "Gemini Enterprise Agent Platform API",
       url: `https://console.cloud.google.com/apis/library/${API}?project=${projectId}`,
     };
   }
@@ -24,7 +24,7 @@ export function classifyError(error: unknown, projectId: string): AccessResult {
   if (/PERMISSION_DENIED|403/i.test(message)) {
     return {
       status: "error",
-      message: `Permission denied. Grant the service account the Vertex AI User role (roles/aiplatform.user) in project ${projectId}.`,
+      message: `Permission denied. Grant the service account the Agent Platform User role (roles/aiplatform.user) in project ${projectId}.`,
     };
   }
   return { status: "error", message };
