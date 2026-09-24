@@ -1,0 +1,62 @@
+{
+  "name": "@saeedsakib/frameflow-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Google image and video models (Nano Banana, Gemini Omni, Veo) on Gemini Enterprise Agent Platform, with a one-command service account setup for Claude Code, Cursor and Codex",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "frameflow-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msaeedsakib/frameflow-mcp.git"
+  },
+  "homepage": "https://github.com/msaeedsakib/frameflow-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/msaeedsakib/frameflow-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "modelcontextprotocol",
+    "gemini",
+    "nano-banana",
+    "veo",
+    "omni",
+    "vertex-ai",
+    "image-generation",
+    "video-generation",
+    "claude",
+    "cursor",
+    "codex"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && bun build src/index.ts --target node --packages external --outdir dist",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "prepublishOnly": "bun run typecheck && bun test && bun run build"
+  },
+  "dependencies": {
+    "@google/genai": "^2.24.0",
+    "@inquirer/prompts": "^8.7.2",
+    "@modelcontextprotocol/server": "^2.1.0",
+    "commander": "^15.0.0",
+    "google-auth-library": "^11.1.0",
+    "picocolors": "^1.1.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "@types/node": "^26.6.2",
+    "smol-toml": "^1.9.0",
+    "typescript": "^7.0.2"
+  }
+}
