@@ -1,6 +1,6 @@
 {
   "name": "@saeedsakib/frameflow-mcp",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "MCP server for Google image and video models (Nano Banana, Gemini Omni, Veo) on Gemini Enterprise Agent Platform, with a one-command service account setup for Claude Code, Cursor and Codex",
   "license": "MIT",
   "type": "module",
