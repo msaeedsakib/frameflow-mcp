@@ -39,8 +39,7 @@ Every generating tool writes to a local `output_path` and returns it. Video tool
 |---|---|---|
 | `list_models` | | Allowed model ids per tool and the current defaults |
 | `set_default_model` | | Persist a default model for a tool |
-| `generate_image` | Nano Banana | Text to image |
-| `edit_image` | Nano Banana | Edit or compose with up to 14 reference images |
+| `generate_image` | Nano Banana | Text to image, optionally guided by up to 14 reference images (logos, products, characters, style) |
 | `generate_video` | Omni, Veo | Text to video |
 | `animate_image` | Omni, Veo | Image to video |
 | `generate_video_from_references` | Omni, Veo | Reference images and/or first and last frames |

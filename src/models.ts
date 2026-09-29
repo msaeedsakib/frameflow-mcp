@@ -1,6 +1,5 @@
 export const generatingTools = [
   "generate_image",
-  "edit_image",
   "generate_video",
   "animate_image",
   "generate_video_from_references",
@@ -20,7 +19,7 @@ type ModelSpec = {
   tools: readonly ToolName[];
 };
 
-const imageTools = ["generate_image", "edit_image"] as const;
+const imageTools = ["generate_image"] as const;
 const omniVideoTools = ["generate_video", "animate_image", "generate_video_from_references", "extend_video", "edit_video"] as const;
 const veoVideoTools = ["generate_video", "animate_image", "generate_video_from_references"] as const;
 

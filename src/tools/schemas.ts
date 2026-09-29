@@ -30,13 +30,17 @@ export const setDefaultModelInput = z.object({
   model: z.string().min(1).describe("One of the ids listed by list_models for this tool."),
 });
 
-export const generateImageInput = z.object({ prompt, output_path: outputPath, model: modelFor("generate_image"), ...imageOptions });
-
-export const editImageInput = z.object({
+export const generateImageInput = z.object({
   prompt,
-  reference_image_paths: z.array(z.string().min(1)).min(1).max(14).describe("Local image files to edit or use as references."),
+  reference_image_paths: z
+    .array(z.string().min(1))
+    .max(14)
+    .optional()
+    .describe(
+      "Local image files the model must see: logos, brand marks, product photos, characters, style samples, or an existing image to modify. Pass these whenever the user refers to an existing image; describing a logo in words is not enough.",
+    ),
   output_path: outputPath,
-  model: modelFor("edit_image"),
+  model: modelFor("generate_image"),
   ...imageOptions,
 });
 
@@ -53,7 +57,11 @@ export const animateImageInput = z.object({
 export const generateVideoFromReferencesInput = z
   .object({
     prompt,
-    reference_image_paths: z.array(z.string().min(1)).max(3).optional().describe("Subject or style references."),
+    reference_image_paths: z
+      .array(z.string().min(1))
+      .max(3)
+      .optional()
+      .describe("Local images that must appear in or guide the video: logos, products, characters, style samples."),
     first_frame_path: z.string().min(1).optional(),
     last_frame_path: z.string().min(1).optional(),
     output_path: outputPath,

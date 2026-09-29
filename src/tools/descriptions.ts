@@ -5,19 +5,16 @@ export const setDefaultModel =
   "Persist the default model for a tool so later calls can omit `model`. Validated against the ids from list_models.";
 
 export const generateImage =
-  "Generate an image from a text prompt with a Nano Banana model and write it to output_path. Returns the written path.";
-
-export const editImage =
-  "Edit or compose images: pass one or more local reference images plus a prompt describing the change. Writes the result to output_path.";
+  "Create an image from a prompt, optionally guided by existing images. If the user refers to ANY existing image (logo, brand mark, product photo, character, style sample, or an image to modify) pass its file path in reference_image_paths so the model can see it; describing a logo in words is not enough. Up to 14 references. Writes to output_path and returns the path.";
 
 export const generateVideo =
-  "Start a text-to-video job. Returns a job_id immediately; poll with get_video_job. The file is written to output_path when done.";
+  "Start a text-only text-to-video job. If existing images or logos must appear in the video use generate_video_from_references; to animate a specific still use animate_image. Returns a job_id immediately; poll with get_video_job. The file is written to output_path when done.";
 
 export const animateImage =
-  "Start an image-to-video job using a local image as the first frame. Returns a job_id; poll with get_video_job.";
+  "Start an image-to-video job where the given local image becomes the first frame and the prompt describes the motion. For images that should merely appear in or guide the video (logos, products, style) use generate_video_from_references instead. Returns a job_id; poll with get_video_job.";
 
 export const generateVideoFromReferences =
-  "Start a video job guided by reference images (subject/style) and/or explicit first and last frames. Returns a job_id; poll with get_video_job.";
+  "Use when existing images must appear in the video: logos, products, characters or style samples via reference_image_paths (up to 3), and/or an exact first_frame_path and last_frame_path. Returns a job_id; poll with get_video_job.";
 
 export const extendVideo =
   "Start a job that continues an existing local video (max 10s) by up to 10 more seconds, guided by the prompt. Omni only. Returns a job_id.";

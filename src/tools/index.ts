@@ -73,12 +73,6 @@ export function registerTools(server: McpServer, clientFor: ClientFor, jobs: Job
   );
 
   server.registerTool(
-    "edit_image",
-    { description: descriptions.editImage, inputSchema: schemas.editImageInput, annotations: generating },
-    (input) => respond("edit_image", async () => generateImage(clientFor, await resolveModel("edit_image", input.model), input)),
-  );
-
-  server.registerTool(
     "generate_video",
     { description: descriptions.generateVideo, inputSchema: schemas.generateVideoInput, annotations: generating },
     (input) =>

@@ -5,14 +5,17 @@ import { generatingTools, type ModelId, type ToolName } from "./models";
 import { configPath } from "./paths";
 
 const configSchema = z.object({
-  defaults: z.partialRecord(z.enum(generatingTools), z.string()).default({}),
+  defaults: z.record(z.string(), z.string()).default({}),
 });
 
-export type Config = z.infer<typeof configSchema>;
+export type Config = { defaults: Partial<Record<ToolName, string>> };
+
+const isTool = (key: string): key is ToolName => (generatingTools as readonly string[]).includes(key);
 
 export async function loadConfig(path = configPath()): Promise<Config> {
   try {
-    return configSchema.parse(JSON.parse(await readFile(path, "utf8")));
+    const { defaults } = configSchema.parse(JSON.parse(await readFile(path, "utf8")));
+    return { defaults: Object.fromEntries(Object.entries(defaults).filter(([key]) => isTool(key))) };
   } catch {
     return { defaults: {} };
   }

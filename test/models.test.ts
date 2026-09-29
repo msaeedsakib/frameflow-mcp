@@ -9,6 +9,11 @@ test("every tool has at least one model and only known ids", () => {
   }
 });
 
+test("edit_image is gone and generate_image is the only image tool", () => {
+  expect(generatingTools).not.toContain("edit_image");
+  expect(generatingTools.filter((tool) => allowedModelsFor(tool).every((id) => modelById(id).family === "nano-banana"))).toEqual(["generate_image"]);
+});
+
 test("extend and edit are Omni only, images are Nano Banana only", () => {
   expect(allowedModelsFor("extend_video")).toEqual(["gemini-omni-1.1-flash-preview"]);
   expect(allowedModelsFor("edit_video")).toEqual(["gemini-omni-1.1-flash-preview"]);
