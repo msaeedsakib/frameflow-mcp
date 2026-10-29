@@ -9,18 +9,17 @@ const outputPath = z
   .min(1)
   .describe("Absolute or ~ path to write the result to. Parent directories are created. The extension is corrected to match the returned format.");
 const prompt = z.string().min(1);
+const localPath = z.string().min(1);
 
 const imageOptions = {
   aspect_ratio: z.enum(["1:1", "2:3", "3:2", "3:4", "4:3", "4:5", "5:4", "9:16", "16:9", "21:9"]).optional(),
-  image_size: z.enum(["512", "1K", "2K", "4K"]).optional().describe("Lite supports up to 1K; Flash and Pro up to 4K."),
+  image_size: z.enum(["1K", "2K", "4K"]).optional().describe("Lite supports only 1K. Default 1K."),
 };
 
 const videoOptions = {
   aspect_ratio: z.enum(["16:9", "9:16"]).optional(),
-  resolution: z.enum(["360p", "720p", "1080p", "4k"]).optional().describe("Veo supports 720p and 1080p; Omni all four."),
-  duration_seconds: z.number().int().min(3).max(10).optional().describe("Omni: 3-10. Veo: 4, 6 or 8."),
-  generate_audio: z.boolean().optional().describe("Veo only."),
-  negative_prompt: z.string().optional().describe("Veo only."),
+  resolution: z.enum(["360p", "720p", "1080p", "4k"]).optional().describe("Default 720p; 1080p and 4k are upscaled."),
+  duration_seconds: z.number().int().min(3).max(10).optional(),
 };
 
 export const listModelsInput = z.object({});
@@ -33,7 +32,7 @@ export const setDefaultModelInput = z.object({
 export const generateImageInput = z.object({
   prompt,
   reference_image_paths: z
-    .array(z.string().min(1))
+    .array(localPath)
     .max(14)
     .optional()
     .describe(
@@ -48,7 +47,7 @@ export const generateVideoInput = z.object({ prompt, output_path: outputPath, mo
 
 export const animateImageInput = z.object({
   prompt,
-  image_path: z.string().min(1).describe("Local image used as the first frame."),
+  image_path: localPath.describe("Local image used as the first frame."),
   output_path: outputPath,
   model: modelFor("animate_image"),
   ...videoOptions,
@@ -58,12 +57,12 @@ export const generateVideoFromReferencesInput = z
   .object({
     prompt,
     reference_image_paths: z
-      .array(z.string().min(1))
+      .array(localPath)
       .max(3)
       .optional()
       .describe("Local images that must appear in or guide the video: logos, products, characters, style samples."),
-    first_frame_path: z.string().min(1).optional(),
-    last_frame_path: z.string().min(1).optional(),
+    first_frame_path: localPath.optional(),
+    last_frame_path: localPath.optional(),
     output_path: outputPath,
     model: modelFor("generate_video_from_references"),
     ...videoOptions,
@@ -74,7 +73,7 @@ export const generateVideoFromReferencesInput = z
 
 const videoEdit = {
   prompt,
-  video_path: z.string().min(1).describe("Local video, at most 10 seconds."),
+  video_path: localPath.describe("Local video, at most 10 seconds."),
   output_path: outputPath,
   ...videoOptions,
 };
@@ -82,7 +81,46 @@ const videoEdit = {
 export const extendVideoInput = z.object({ ...videoEdit, model: modelFor("extend_video") });
 export const editVideoInput = z.object({ ...videoEdit, model: modelFor("edit_video") });
 
-export const getVideoJobInput = z.object({ job_id: z.string().min(1) });
+const voiceName = z.string().min(1).describe("A prebuilt voice name (Kore, Puck, Zephyr, ...) or a custom voice_... id from list_voices.");
+
+export const generateSpeechInput = z
+  .object({
+    text: z.string().min(1).optional().describe("What to say, for a single speaker. Use turns instead for a dialogue."),
+    voice: voiceName.optional(),
+    style: z.string().optional().describe("Delivery direction, e.g. 'cheerful and fast', 'whispering', 'calm newsreader'."),
+    turns: z
+      .array(z.object({ speaker: z.string().min(1), text: z.string().min(1), style: z.string().optional() }))
+      .min(1)
+      .optional()
+      .describe("Dialogue between at most 2 speakers, in order. Needs voices."),
+    voices: z.record(z.string(), z.string()).optional().describe("Speaker name to prebuilt voice name, e.g. { \"Joe\": \"Puck\", \"Jane\": \"Kore\" }. Custom voices are single-speaker only."),
+    output_path: outputPath,
+    model: modelFor("generate_speech"),
+  })
+  .refine((input) => Boolean(input.text) !== Boolean(input.turns?.length), { message: "Provide exactly one of text or turns." });
+
+export const generateMusicInput = z.object({
+  prompt: prompt.describe("Genre, mood, tempo, instruments, structure and length. Put lyrics inline with [Verse], [Chorus], [Bridge] tags, or say 'instrumental only'."),
+  reference_image_paths: z.array(localPath).max(10).optional().describe("Optional images to set the mood, e.g. album art or a scene."),
+  format: z.enum(["wav", "mp3"]).optional().describe("Default wav."),
+  output_path: outputPath,
+  model: modelFor("generate_music"),
+});
+
+export const createVoiceInput = z
+  .object({
+    name: z.string().min(1).describe("Display name for the new voice."),
+    description: z.string().min(1).optional().describe("Voice design: describe age, gender, timbre, accent, pacing and personality in words."),
+    sample_path: localPath.optional().describe("Voice replication: a clean 10-30 s WAV of the voice owner speaking."),
+    consent_path: localPath.optional().describe("Voice replication: a WAV of the same person reading Google's consent statement."),
+  })
+  .refine((input) => Boolean(input.description) !== Boolean(input.sample_path || input.consent_path), {
+    message: "Provide either description (design) or sample_path + consent_path (replication).",
+  });
+
+export const listVoicesInput = z.object({});
+
+export const getJobInput = z.object({ job_id: z.string().min(1) });
 
 export type VideoOptions = z.infer<z.ZodObject<typeof videoOptions>>;
 export type ImageOptions = z.infer<z.ZodObject<typeof imageOptions>>;

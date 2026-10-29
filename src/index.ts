@@ -17,11 +17,11 @@ const exitOnCancel = (run: () => Promise<void>) => async () => {
 
 const program = new Command()
   .name("frameflow-mcp")
-  .description("FrameFlow MCP server for Google image and video models. Run without a command to start the stdio server.")
+  .description("FrameFlow MCP server for Google image, video, speech and music models. Run without a command to start the stdio server.")
   .version(version)
   .action(serve);
 
-program.command("setup").description("Store a service account key and configure your AI agents").action(exitOnCancel(setup));
+program.command("setup").description("Store a Gemini API key and configure your AI agents").action(exitOnCancel(setup));
 program.command("status").description("Show the stored key, configured agents and verify access").action(exitOnCancel(status));
 program.command("remove").description("Remove the MCP server and skill from agents, optionally delete the key").action(exitOnCancel(remove));
 

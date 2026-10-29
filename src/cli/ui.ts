@@ -1,5 +1,4 @@
 import pc from "picocolors";
-import type { ServiceAccount } from "../credentials";
 import type { AccessResult } from "./access-check";
 
 export const log = {
@@ -10,18 +9,9 @@ export const log = {
   step: (message: string) => console.log(`\n${pc.bold(message)}`),
 };
 
-export function reportAccess(result: AccessResult, account: ServiceAccount): void {
-  switch (result.status) {
-    case "ok":
-      log.success(`Access verified for project ${pc.bold(account.project_id)}.`);
-      return;
-    case "api-disabled":
-      log.error(`The ${result.api} is not enabled in project ${pc.bold(account.project_id)}.`);
-      log.info(`  Enable it here: ${pc.cyan(result.url)}`);
-      log.info(pc.dim("  It can take a minute or two to take effect after enabling."));
-      return;
-    case "error":
-      log.error(result.message);
-      return;
-  }
+export function reportAccess(result: AccessResult): void {
+  if (result.status === "ok") log.success("API key verified.");
+  else log.error(result.message);
 }
+
+export const maskKey = (key: string) => `${key.slice(0, 6)}…${key.slice(-4)}`;

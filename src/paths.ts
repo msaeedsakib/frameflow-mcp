@@ -4,16 +4,14 @@ import { join } from "node:path";
 export const PACKAGE_NAME = "@saeedsakib/frameflow-mcp";
 export const SERVER_NAME = "frameflow";
 export const SKILL_NAME = "frameflow-mcp";
+export const API_KEY_ENV = "GEMINI_API_KEY";
+export const API_KEY_URL = "https://aistudio.google.com/apikey";
 
 export const home = () => process.env.HOME || homedir();
 
 export function configDir(): string {
   if (process.platform === "win32" && process.env.APPDATA) return join(process.env.APPDATA, SKILL_NAME);
   return join(process.env.XDG_CONFIG_HOME || join(home(), ".config"), SKILL_NAME);
-}
-
-export function keyPath(): string {
-  return join(configDir(), "service-account.json");
 }
 
 export function configPath(): string {

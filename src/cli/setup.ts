@@ -1,42 +1,32 @@
-import { checkbox, confirm, input, select } from "@inquirer/prompts";
-import { existsSync } from "node:fs";
+import { checkbox, confirm, password, select } from "@inquirer/prompts";
 import pc from "picocolors";
 import { agents, genericSnippet } from "../agents";
-import { readServiceAccount, storeServiceAccount, type ServiceAccount } from "../credentials";
-import { keyPath, normalizePath } from "../paths";
+import { findApiKey, storeApiKey } from "../config";
+import { API_KEY_ENV, API_KEY_URL, configPath } from "../paths";
 import { checkAccess } from "./access-check";
-import { log, reportAccess } from "./ui";
+import { log, maskKey, reportAccess } from "./ui";
 
 const SKILL_URL = "https://github.com/msaeedsakib/frameflow-mcp/blob/main/skills/frameflow-mcp/SKILL.md";
 
-async function promptServiceAccount(): Promise<ServiceAccount> {
-  let account: ServiceAccount | undefined;
-  await input({
-    message: "Path to your service account JSON key (drag the file here):",
-    validate: async (value) => {
-      if (!value.trim()) return "Enter a file path.";
-      try {
-        account = await readServiceAccount(normalizePath(value));
-        return true;
-      } catch (error) {
-        return error instanceof Error ? error.message : String(error);
-      }
-    },
-  });
-  if (!account) throw new Error("No service account key provided.");
-  return account;
+async function promptApiKey(): Promise<string> {
+  log.info(`  Get a key at ${pc.cyan(API_KEY_URL)}`);
+  return password({
+    message: "Gemini API key:",
+    mask: "*",
+    validate: (value) => (value.trim() ? true : "Paste your API key."),
+  }).then((value) => value.trim());
 }
 
-async function verifyLoop(account: ServiceAccount): Promise<void> {
+async function verifyLoop(apiKey: string): Promise<void> {
   for (;;) {
-    log.step("Checking access to Gemini Enterprise Agent Platform…");
-    const result = await checkAccess(account);
-    reportAccess(result, account);
+    log.step("Checking the key against the Gemini API…");
+    const result = await checkAccess(apiKey);
+    reportAccess(result);
     if (result.status === "ok") return;
     const next = await select({
       message: "What next?",
       choices: [
-        { name: "I fixed it, check again", value: "retry" },
+        { name: "Check again", value: "retry" },
         { name: "Continue anyway", value: "continue" },
         { name: "Quit", value: "quit" },
       ],
@@ -77,22 +67,22 @@ async function chooseAgents(): Promise<void> {
 
 export async function setup(): Promise<void> {
   log.info(pc.bold("FrameFlow MCP setup\n"));
-  const existing = existsSync(keyPath());
-  const replace =
-    !existing || (await confirm({ message: `A key is already stored at ${keyPath()}. Replace it?`, default: false }));
+  const existing = await findApiKey();
+  if (existing?.source === "env") log.info(`  ${API_KEY_ENV} is set in this shell (${maskKey(existing.apiKey)}); the server prefers it over a stored key.`);
 
-  let account: ServiceAccount;
+  const stored = existing?.source === "config" ? existing.apiKey : undefined;
+  const replace = !stored || (await confirm({ message: `A key is already stored (${maskKey(stored)}). Replace it?`, default: false }));
+
+  let apiKey: string;
   if (replace) {
-    account = await promptServiceAccount();
-    await storeServiceAccount(account);
-    log.success(`Key stored at ${pc.dim(keyPath())} ${pc.dim("(owner read/write only)")}`);
-    log.info(pc.dim("  You can delete the downloaded file now."));
+    apiKey = await promptApiKey();
+    await storeApiKey(apiKey);
+    log.success(`Key stored in ${pc.dim(configPath())} ${pc.dim("(owner read/write only)")}`);
   } else {
-    account = await readServiceAccount(keyPath());
+    apiKey = stored;
   }
-  log.info(`  Service account: ${pc.cyan(account.client_email)}`);
 
-  await verifyLoop(account);
+  await verifyLoop(apiKey);
   await chooseAgents();
   log.info(`\n${pc.green("Done.")} Restart your agent so it picks up the new MCP server.`);
 }

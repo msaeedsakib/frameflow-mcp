@@ -1,19 +1,19 @@
 import pc from "picocolors";
 import { agents } from "../agents";
-import { loadStoredServiceAccount } from "../credentials";
-import { keyPath, PACKAGE_NAME } from "../paths";
+import { findApiKey } from "../config";
+import { API_KEY_ENV, configPath, PACKAGE_NAME } from "../paths";
 import { checkAccess } from "./access-check";
-import { log, reportAccess } from "./ui";
+import { log, maskKey, reportAccess } from "./ui";
 
 export async function status(): Promise<void> {
-  const account = await loadStoredServiceAccount();
-  log.step("Key");
-  if (!account) {
-    log.error(`No valid key at ${keyPath()}. Run ${pc.cyan(`npx ${PACKAGE_NAME} setup`)}.`);
+  const found = await findApiKey();
+  log.step("API key");
+  if (!found) {
+    log.error(`No key found. Run ${pc.cyan(`npx ${PACKAGE_NAME} setup`)} or set ${API_KEY_ENV}.`);
+  } else if (found.source === "env") {
+    log.success(`${maskKey(found.apiKey)} ${pc.dim(`from ${API_KEY_ENV}`)}`);
   } else {
-    log.success(`${pc.dim(keyPath())}`);
-    log.info(`  Service account: ${pc.cyan(account.client_email)}`);
-    log.info(`  Project: ${account.project_id}`);
+    log.success(`${maskKey(found.apiKey)} ${pc.dim(`from ${configPath()}`)}`);
   }
 
   log.step("Agents");
@@ -23,8 +23,8 @@ export async function status(): Promise<void> {
     else log.info(`${pc.dim("-")} ${agent.label} ${pc.dim("not configured")}`);
   }
 
-  if (account) {
+  if (found) {
     log.step("Access");
-    reportAccess(await checkAccess(account), account);
+    reportAccess(await checkAccess(found.apiKey));
   }
 }

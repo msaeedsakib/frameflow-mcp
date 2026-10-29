@@ -5,31 +5,36 @@ export const generatingTools = [
   "generate_video_from_references",
   "extend_video",
   "edit_video",
+  "generate_speech",
+  "generate_music",
 ] as const;
 
 export type ToolName = (typeof generatingTools)[number];
 
-export type Family = "nano-banana" | "omni" | "veo";
+export type Family = "image" | "video" | "speech" | "music";
 
 type ModelSpec = {
   id: string;
   family: Family;
-  location: string;
   label: string;
   tools: readonly ToolName[];
 };
 
 const imageTools = ["generate_image"] as const;
-const omniVideoTools = ["generate_video", "animate_image", "generate_video_from_references", "extend_video", "edit_video"] as const;
-const veoVideoTools = ["generate_video", "animate_image", "generate_video_from_references"] as const;
+const videoTools = ["generate_video", "animate_image", "generate_video_from_references", "extend_video", "edit_video"] as const;
+const speechTools = ["generate_speech"] as const;
+const musicTools = ["generate_music"] as const;
 
 export const models = [
-  { id: "gemini-3.1-flash-image", family: "nano-banana", location: "global", label: "Nano Banana 2", tools: imageTools },
-  { id: "gemini-3-pro-image", family: "nano-banana", location: "global", label: "Nano Banana Pro", tools: imageTools },
-  { id: "gemini-3.1-flash-lite-image", family: "nano-banana", location: "global", label: "Nano Banana 2 Lite", tools: imageTools },
-  { id: "gemini-omni-1.1-flash-preview", family: "omni", location: "global", label: "Gemini Omni 1.1 Flash", tools: omniVideoTools },
-  { id: "veo-3.1-generate-001", family: "veo", location: "us-central1", label: "Veo 3.1", tools: veoVideoTools },
-  { id: "veo-3.1-fast-generate-001", family: "veo", location: "us-central1", label: "Veo 3.1 Fast", tools: veoVideoTools },
+  { id: "gemini-nano-banana-2.1", family: "image", label: "Nano Banana 2.1", tools: imageTools },
+  { id: "gemini-3.1-flash-image", family: "image", label: "Nano Banana 2", tools: imageTools },
+  { id: "gemini-3-pro-image", family: "image", label: "Nano Banana Pro", tools: imageTools },
+  { id: "gemini-3.1-flash-lite-image", family: "image", label: "Nano Banana 2 Lite", tools: imageTools },
+  { id: "gemini-omni-1.1-flash", family: "video", label: "Gemini Omni 1.1 Flash", tools: videoTools },
+  { id: "gemini-3.8-flash-tts", family: "speech", label: "Gemini 3.8 Flash TTS", tools: speechTools },
+  { id: "gemini-3.8-flash-lite-tts", family: "speech", label: "Gemini 3.8 Flash-Lite TTS", tools: speechTools },
+  { id: "lyria-3.5", family: "music", label: "Lyria 3.5 (full songs)", tools: musicTools },
+  { id: "lyria-3-clip-preview", family: "music", label: "Lyria 3 Clip (30 s)", tools: musicTools },
 ] as const satisfies readonly ModelSpec[];
 
 export type ModelId = (typeof models)[number]["id"];

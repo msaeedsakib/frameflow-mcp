@@ -1,9 +1,8 @@
 import { checkbox, confirm } from "@inquirer/prompts";
-import { existsSync } from "node:fs";
-import { rm } from "node:fs/promises";
 import pc from "picocolors";
 import { agents } from "../agents";
-import { keyPath } from "../paths";
+import { clearApiKey, loadConfig } from "../config";
+import { configPath } from "../paths";
 import { log } from "./ui";
 
 export async function remove(): Promise<void> {
@@ -25,8 +24,8 @@ export async function remove(): Promise<void> {
     }
   }
 
-  if (existsSync(keyPath()) && (await confirm({ message: `Delete the stored key at ${keyPath()}?`, default: false }))) {
-    await rm(keyPath(), { force: true });
-    log.success(`Deleted ${pc.dim(keyPath())}`);
+  if ((await loadConfig()).api_key && (await confirm({ message: `Delete the API key stored in ${configPath()}?`, default: false }))) {
+    await clearApiKey();
+    log.success(`Deleted the key from ${pc.dim(configPath())}`);
   }
 }

@@ -13,6 +13,14 @@ const mimeTypes: Record<string, string> = {
   ".mp4": "video/mp4",
   ".webm": "video/webm",
   ".mov": "video/quicktime",
+  ".wav": "audio/wav",
+  ".mp3": "audio/mp3",
+};
+
+const aliases: Record<string, string> = {
+  "audio/mpeg": ".mp3",
+  "audio/x-wav": ".wav",
+  "audio/wave": ".wav",
 };
 
 export function mimeTypeOf(path: string): string {
@@ -43,4 +51,9 @@ export async function writeOutput(input: string, bytes: Uint8Array): Promise<{ p
 }
 
 export const extensionFor = (mimeType: string): string =>
-  Object.entries(mimeTypes).find(([, mime]) => mime === mimeType)?.[0] ?? "";
+  aliases[mimeType] ?? Object.entries(mimeTypes).find(([, mime]) => mime === mimeType)?.[0] ?? "";
+
+export function withExtensionFor(outputPath: string, mimeType: string | undefined): string {
+  const extension = mimeType ? extensionFor(mimeType) : "";
+  return extension ? outputPath.replace(/\.[A-Za-z0-9]+$/, "") + extension : outputPath;
+}

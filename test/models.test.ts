@@ -9,22 +9,16 @@ test("every tool has at least one model and only known ids", () => {
   }
 });
 
-test("edit_image is gone and generate_image is the only image tool", () => {
-  expect(generatingTools).not.toContain("edit_image");
-  expect(generatingTools.filter((tool) => allowedModelsFor(tool).every((id) => modelById(id).family === "nano-banana"))).toEqual(["generate_image"]);
+test("each tool maps to exactly one family", () => {
+  const familyOf = (tool: (typeof generatingTools)[number]) => new Set(allowedModelsFor(tool).map((id) => modelById(id).family));
+  expect(familyOf("generate_image")).toEqual(new Set(["image"]));
+  expect(familyOf("extend_video")).toEqual(new Set(["video"]));
+  expect(familyOf("generate_speech")).toEqual(new Set(["speech"]));
+  expect(familyOf("generate_music")).toEqual(new Set(["music"]));
+  expect(allowedModelsFor("generate_video")).toEqual(["gemini-omni-1.1-flash"]);
 });
 
-test("extend and edit are Omni only, images are Nano Banana only", () => {
-  expect(allowedModelsFor("extend_video")).toEqual(["gemini-omni-1.1-flash-preview"]);
-  expect(allowedModelsFor("edit_video")).toEqual(["gemini-omni-1.1-flash-preview"]);
-  expect(allowedModelsFor("generate_image").every((id) => modelById(id).family === "nano-banana")).toBe(true);
-  expect(allowedModelsFor("generate_video")).toContain("veo-3.1-generate-001");
-});
-
-test("locations follow the family", () => {
-  for (const model of models) expect(model.location).toBe(model.family === "veo" ? "us-central1" : "global");
-});
-
-test("unknown ids throw", () => {
-  expect(() => modelById("nope")).toThrow("Unknown model nope");
+test("no vertex-era ids remain", () => {
+  for (const model of models) expect(model.id).not.toMatch(/veo|omni.*-preview$/);
+  expect(() => modelById("veo-3.1-generate-001")).toThrow("Unknown model");
 });

@@ -1,23 +1,33 @@
 import type { CallToolResult, McpServer } from "@modelcontextprotocol/server";
-import type { ClientFor } from "../clients";
+import type { Client } from "../clients";
 import { defaultModelFor, loadConfig, setDefaultModel } from "../config";
 import type { JobPoll, Jobs } from "../jobs";
 import { readInlineMedia } from "../media";
 import { allowedModelsFor, generatingTools, modelById, type Model, type ToolName } from "../models";
 import * as descriptions from "./descriptions";
 import { generateImage } from "./images";
+import { submitMusic } from "./music";
 import * as schemas from "./schemas";
-import { submitOmni, type OmniRequest } from "./video-omni";
-import { submitVeo, type VeoRequest } from "./video-veo";
+import { generateSpeech } from "./speech";
+import { submitVideo } from "./video";
+import { createVoice, listVoices } from "./voices";
 
 const readOnly = { readOnlyHint: true, openWorldHint: false };
 const generating = { readOnlyHint: false, destructiveHint: false, openWorldHint: true };
+
+function explain(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/^402\b|PAYMENT_REQUIRED/i.test(message)) {
+    return "402 Payment required: this model needs billing enabled on the Google AI Studio project that owns the API key (aistudio.google.com → Settings → Billing).";
+  }
+  return message;
+}
 
 async function respond(name: string, run: () => Promise<unknown>): Promise<CallToolResult> {
   try {
     return { content: [{ type: "text", text: JSON.stringify(await run(), null, 2) }] };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = explain(error);
     return { content: [{ type: "text", text: JSON.stringify({ error: `Failed to execute tool '${name}': ${message}` }) }], isError: true };
   }
 }
@@ -30,19 +40,12 @@ async function resolveModel(tool: ToolName, requested: string | undefined): Prom
   return modelById(id);
 }
 
-export function registerTools(server: McpServer, clientFor: ClientFor, jobs: Jobs): void {
-  const submitVideo = async (
-    tool: ToolName,
-    input: { model?: string; output_path: string },
-    build: (model: Model) => Promise<JobPoll>,
-  ) => {
+export function registerTools(server: McpServer, client: Client, jobs: Jobs): void {
+  const submitJob = async (tool: ToolName, input: { model?: string; output_path: string }, build: (model: Model) => Promise<JobPoll>) => {
     const model = await resolveModel(tool, input.model);
     const poll = await build(model);
     return jobs.create({ tool, model: model.id, output_path: input.output_path, poll });
   };
-
-  const dispatch = (model: Model, omni: OmniRequest, veo: VeoRequest) =>
-    model.family === "omni" ? submitOmni(clientFor, model, omni) : submitVeo(clientFor, model, veo);
 
   server.registerTool(
     "list_models",
@@ -69,16 +72,13 @@ export function registerTools(server: McpServer, clientFor: ClientFor, jobs: Job
   server.registerTool(
     "generate_image",
     { description: descriptions.generateImage, inputSchema: schemas.generateImageInput, annotations: generating },
-    (input) => respond("generate_image", async () => generateImage(clientFor, await resolveModel("generate_image", input.model), input)),
+    (input) => respond("generate_image", async () => generateImage(client, await resolveModel("generate_image", input.model), input)),
   );
 
   server.registerTool(
     "generate_video",
     { description: descriptions.generateVideo, inputSchema: schemas.generateVideoInput, annotations: generating },
-    (input) =>
-      respond("generate_video", () =>
-        submitVideo("generate_video", input, (model) => dispatch(model, { ...input, task: "text_to_video" }, input)),
-      ),
+    (input) => respond("generate_video", () => submitJob("generate_video", input, (model) => submitVideo(client, model, { ...input, task: "text_to_video" }))),
   );
 
   server.registerTool(
@@ -86,10 +86,9 @@ export function registerTools(server: McpServer, clientFor: ClientFor, jobs: Job
     { description: descriptions.animateImage, inputSchema: schemas.animateImageInput, annotations: generating },
     (input) =>
       respond("animate_image", () =>
-        submitVideo("animate_image", input, async (model) => {
-          const first = await readInlineMedia(input.image_path);
-          return dispatch(model, { ...input, task: "image_to_video", images: [first] }, { ...input, first_frame: first });
-        }),
+        submitJob("animate_image", input, async (model) =>
+          submitVideo(client, model, { ...input, task: "image_to_video", images: [await readInlineMedia(input.image_path)] }),
+        ),
       ),
   );
 
@@ -98,16 +97,14 @@ export function registerTools(server: McpServer, clientFor: ClientFor, jobs: Job
     { description: descriptions.generateVideoFromReferences, inputSchema: schemas.generateVideoFromReferencesInput, annotations: generating },
     (input) =>
       respond("generate_video_from_references", () =>
-        submitVideo("generate_video_from_references", input, async (model) => {
+        submitJob("generate_video_from_references", input, async (model) => {
           const references = await Promise.all((input.reference_image_paths ?? []).map(readInlineMedia));
-          const first = input.first_frame_path ? await readInlineMedia(input.first_frame_path) : undefined;
-          const last = input.last_frame_path ? await readInlineMedia(input.last_frame_path) : undefined;
-          const frames = [first, last].filter((frame) => frame !== undefined);
-          return dispatch(
-            model,
-            { ...input, task: references.length ? "reference_to_video" : "image_to_video", images: [...frames, ...references] },
-            { ...input, first_frame: first, last_frame: last, references: references.length ? references : undefined },
-          );
+          const frames = await Promise.all([input.first_frame_path, input.last_frame_path].filter((path) => path !== undefined).map(readInlineMedia));
+          return submitVideo(client, model, {
+            ...input,
+            task: references.length ? "reference_to_video" : "image_to_video",
+            images: [...frames, ...references],
+          });
         }),
       ),
   );
@@ -115,28 +112,42 @@ export function registerTools(server: McpServer, clientFor: ClientFor, jobs: Job
   server.registerTool(
     "extend_video",
     { description: descriptions.extendVideo, inputSchema: schemas.extendVideoInput, annotations: generating },
-    (input) =>
-      respond("extend_video", () =>
-        submitVideo("extend_video", input, async (model) =>
-          submitOmni(clientFor, model, { ...input, task: "extend", video: await readInlineMedia(input.video_path) }),
-        ),
-      ),
+    (input) => respond("extend_video", () => submitJob("extend_video", input, (model) => submitVideo(client, model, { ...input, task: "extend" }))),
   );
 
   server.registerTool(
     "edit_video",
     { description: descriptions.editVideo, inputSchema: schemas.editVideoInput, annotations: generating },
-    (input) =>
-      respond("edit_video", () =>
-        submitVideo("edit_video", input, async (model) =>
-          submitOmni(clientFor, model, { ...input, task: "edit", video: await readInlineMedia(input.video_path) }),
-        ),
-      ),
+    (input) => respond("edit_video", () => submitJob("edit_video", input, (model) => submitVideo(client, model, { ...input, task: "edit" }))),
   );
 
   server.registerTool(
-    "get_video_job",
-    { description: descriptions.getVideoJob, inputSchema: schemas.getVideoJobInput, annotations: readOnly },
-    ({ job_id }) => respond("get_video_job", () => jobs.check(job_id)),
+    "generate_speech",
+    { description: descriptions.generateSpeech, inputSchema: schemas.generateSpeechInput, annotations: generating },
+    (input) => respond("generate_speech", async () => generateSpeech(client, await resolveModel("generate_speech", input.model), input)),
+  );
+
+  server.registerTool(
+    "generate_music",
+    { description: descriptions.generateMusic, inputSchema: schemas.generateMusicInput, annotations: generating },
+    (input) => respond("generate_music", () => submitJob("generate_music", input, (model) => submitMusic(client, model, input))),
+  );
+
+  server.registerTool(
+    "create_voice",
+    { description: descriptions.createVoice, inputSchema: schemas.createVoiceInput, annotations: generating },
+    (input) => respond("create_voice", () => createVoice(client, input)),
+  );
+
+  server.registerTool(
+    "list_voices",
+    { description: descriptions.listVoices, inputSchema: schemas.listVoicesInput, annotations: readOnly },
+    () => respond("list_voices", () => listVoices(client)),
+  );
+
+  server.registerTool(
+    "get_job",
+    { description: descriptions.getJob, inputSchema: schemas.getJobInput, annotations: readOnly },
+    ({ job_id }) => respond("get_job", () => jobs.check(job_id)),
   );
 }

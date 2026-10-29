@@ -1,40 +1,22 @@
 import { createClient } from "../clients";
-import type { ServiceAccount } from "../credentials";
 
-export type AccessResult =
-  | { status: "ok"; model: string }
-  | { status: "api-disabled"; api: string; url: string }
-  | { status: "error"; message: string };
+export type AccessResult = { status: "ok" } | { status: "error"; message: string };
 
-const API = "aiplatform.googleapis.com";
 const PROBE_MODEL = "gemini-3.1-flash-image";
 
-export function classifyError(error: unknown, projectId: string): AccessResult {
+export function classifyError(error: unknown): AccessResult {
   const message = error instanceof Error ? error.message : String(error);
-  if (/SERVICE_DISABLED|has not been used in project|it is disabled/i.test(message)) {
-    return {
-      status: "api-disabled",
-      api: "Gemini Enterprise Agent Platform API",
-      url: `https://console.cloud.google.com/apis/library/${API}?project=${projectId}`,
-    };
-  }
-  if (/UNAUTHENTICATED|invalid_grant|invalid_client|account not found/i.test(message)) {
-    return { status: "error", message: "Google rejected this key. It may have been deleted or disabled; create a new key." };
-  }
-  if (/PERMISSION_DENIED|403/i.test(message)) {
-    return {
-      status: "error",
-      message: `Permission denied. Grant the service account the Agent Platform User role (roles/aiplatform.user) in project ${projectId}.`,
-    };
+  if (/API key not valid|API_KEY_INVALID|UNAUTHENTICATED|401|403/i.test(message)) {
+    return { status: "error", message: "Google rejected this API key. Check it in Google AI Studio or create a new one." };
   }
   return { status: "error", message };
 }
 
-export async function checkAccess(account: ServiceAccount): Promise<AccessResult> {
+export async function checkAccess(apiKey: string): Promise<AccessResult> {
   try {
-    const model = await createClient(account, "global").models.get({ model: PROBE_MODEL });
-    return { status: "ok", model: model.name ?? PROBE_MODEL };
+    await createClient(apiKey).models.get({ model: PROBE_MODEL });
+    return { status: "ok" };
   } catch (error) {
-    return classifyError(error, account.project_id);
+    return classifyError(error);
   }
 }
