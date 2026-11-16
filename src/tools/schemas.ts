@@ -2,11 +2,10 @@ import { z } from "zod";
 import { allowedModelsFor, defaultModels, modelById, type ToolName } from "../models";
 
 function modelFor(tool: ToolName) {
-  const others = allowedModelsFor(tool)
-    .filter((id) => id !== defaultModels[tool])
-    .map((id) => `${id} (${modelById(id).use})`);
+  const allowed = allowedModelsFor(tool);
+  const others = allowed.filter((id) => id !== defaultModels[tool]).map((id) => `${id} (${modelById(id).use})`);
   const hint = others.length ? ` Override only for a reason: ${others.join("; ")}.` : "";
-  return z.enum(allowedModelsFor(tool)).optional().describe(`Omit to use ${defaultModels[tool]}.${hint}`);
+  return z.enum(allowed).optional().describe(`Omit to use ${defaultModels[tool]}.${hint}`);
 }
 
 const outputPath = z

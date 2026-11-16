@@ -1,9 +1,9 @@
 import type { CallToolResult, McpServer } from "@modelcontextprotocol/server";
 import type { Client } from "../clients";
+import { explain } from "../errors";
 import type { JobPoll, Jobs } from "../jobs";
 import { readInlineMedia } from "../media";
-import { allowedModelsFor, defaultModels, generatingTools, modelById, type Model, type ToolName } from "../models";
-import { API_KEY_ENV, API_KEY_URL } from "../paths";
+import { defaultModels, generatingTools, modelById, models, type Model, type ModelId, type ToolName } from "../models";
 import * as descriptions from "./descriptions";
 import { generateImage } from "./images";
 import { submitMusic } from "./music";
@@ -15,17 +15,6 @@ import { createVoice, listVoices } from "./voices";
 const readOnly = { readOnlyHint: true, openWorldHint: false };
 const generating = { readOnlyHint: false, destructiveHint: false, openWorldHint: true };
 
-function explain(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  if (/^402\b|PAYMENT_REQUIRED/i.test(message)) {
-    return "402 Payment required: this model needs billing enabled on the Google AI Studio project that owns the API key (aistudio.google.com → Settings → Billing).";
-  }
-  if (/API key not valid|API_KEY_INVALID|UNAUTHENTICATED|\b40[13]\b/i.test(message)) {
-    return `Google rejected the API key. Check ${API_KEY_ENV} in this server's MCP config, or create a new key at ${API_KEY_URL}.`;
-  }
-  return message;
-}
-
 async function respond(name: string, run: () => Promise<unknown>): Promise<CallToolResult> {
   try {
     return { content: [{ type: "text", text: JSON.stringify(await run(), null, 2) }] };
@@ -35,10 +24,10 @@ async function respond(name: string, run: () => Promise<unknown>): Promise<CallT
   }
 }
 
-const resolveModel = (tool: ToolName, requested: string | undefined): Model => modelById(requested ?? defaultModels[tool]);
+const resolveModel = (tool: ToolName, requested: ModelId | undefined): Model => modelById(requested ?? defaultModels[tool]);
 
 export function registerTools(server: McpServer, client: Client, jobs: Jobs): void {
-  const submitJob = async (tool: ToolName, input: { model?: string; output_path: string }, build: (model: Model) => Promise<JobPoll>) => {
+  const submitJob = async (tool: ToolName, input: { model?: ModelId; output_path: string }, build: (model: Model) => Promise<JobPoll>) => {
     const model = resolveModel(tool, input.model);
     const poll = await build(model);
     return jobs.create({ tool, model: model.id, output_path: input.output_path, poll });
@@ -52,10 +41,7 @@ export function registerTools(server: McpServer, client: Client, jobs: Jobs): vo
         generatingTools.map((tool) => ({
           tool,
           default: defaultModels[tool],
-          models: allowedModelsFor(tool).map((id) => {
-            const { label, use } = modelById(id);
-            return { id, label, use };
-          }),
+          models: models.filter((model) => (model.tools as readonly ToolName[]).includes(tool)).map(({ id, label, use }) => ({ id, label, use })),
         })),
       ),
   );

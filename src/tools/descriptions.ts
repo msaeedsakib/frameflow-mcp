@@ -3,7 +3,8 @@ export const instructions = `FrameFlow generates images, video, speech and music
 - Every generating tool writes its result to output_path and returns the final path. Tell the user that path and one line about what was produced.
 - generate_image and generate_speech are synchronous (5-30 s). Video tools and generate_music return a job_id: poll get_job every 10-20 s until done or failed, usually 1-5 minutes. Don't start many jobs at once unless asked.
 - Whenever the user refers to an existing image (logo, brand mark, product, character, style sample, or an image to change), pass its file path so the model sees it; describing it in words does not reproduce it. Ask for the path if you don't know it.
-- Chain by path: generate_image, then animate_image, then extend_video in 10-second steps; pair a generate_speech voiceover with a generate_music bed.
+- Chain by path: generate_image, then animate_image, then extend_video; pair a generate_speech voiceover with a generate_music bed.
+- If a tool or job says the model returned no media or the request was blocked, the safety filter most likely refused it: rephrase the prompt or change the input media rather than retrying as is.
 - Every tool has a sensible default model. Pass model only to override it, as each tool's model parameter describes.
 - Prompts: subject, setting, style, lighting and camera in one or two sentences; add motion and camera movement for video. Quote any text that must appear in an image.
 - Jobs live in server memory. If get_job says the job is unknown, the server restarted: submit it again.`;
@@ -24,7 +25,7 @@ export const generateVideoFromReferences =
   "Start a video job when existing images must appear in the video: logos, products, characters or style samples via reference_image_paths (up to 3), and/or an exact first_frame_path and last_frame_path. Say in the prompt what each reference is. Returns a job_id; poll with get_job.";
 
 export const extendVideo =
-  "Start a job that makes an existing local video (10 s or shorter) longer by up to 10 seconds, guided by the prompt. For longer results, extend the output again in 10-second steps up to about 40 seconds. Returns a job_id; poll with get_job.";
+  "Start a job that makes an existing local video (10 s or shorter) longer by up to 10 seconds, guided by the prompt. Inputs longer than 10 seconds are rejected, so an extended clip cannot be extended again. Returns a job_id; poll with get_job.";
 
 export const editVideo =
   "Start a job that changes an existing local video (10 s or shorter) according to the prompt, e.g. style, weather or objects. Describe only the change. Returns a job_id; poll with get_job.";

@@ -69,7 +69,7 @@ claude mcp remove frameflow
 rm -rf ~/.claude/skills/frameflow-mcp ~/.cursor/skills/frameflow-mcp ~/.agents/skills/frameflow-mcp ~/.config/frameflow-mcp
 ```
 
-For Codex, `codex mcp remove frameflow`; for Cursor, delete the `frameflow` entry from `~/.cursor/mcp.json`.
+For Codex, `codex mcp remove frameflow`; for Cursor, delete the `frameflow` entry from `~/.cursor/mcp.json`. If you set `CLAUDE_CONFIG_DIR`, `CODEX_HOME` or `XDG_CONFIG_HOME` (`%APPDATA%` on Windows), remove `skills/frameflow-mcp` and `frameflow-mcp` under those directories instead.
 
 ## License
 
