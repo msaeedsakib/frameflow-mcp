@@ -21,4 +21,7 @@ jobs:
       - run: bun run typecheck
       - run: bun test
       - run: bun run build
-      - run: node dist/index.js --help
+      - name: Server answers initialize with instructions
+        run: |
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' \
+            | timeout 10 node dist/index.js | grep -q '"instructions"'

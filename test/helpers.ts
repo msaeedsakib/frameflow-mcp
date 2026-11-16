@@ -5,19 +5,10 @@ import { join } from "node:path";
 
 export function useTempHome(): { readonly path: string } {
   const state = { path: "" };
-  const saved = {
-    HOME: process.env.HOME,
-    XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME,
-    CLAUDE_CONFIG_DIR: process.env.CLAUDE_CONFIG_DIR,
-    CODEX_HOME: process.env.CODEX_HOME,
-    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-  };
+  const saved = { HOME: process.env.HOME, GEMINI_API_KEY: process.env.GEMINI_API_KEY };
   beforeEach(async () => {
     state.path = await mkdtemp(join(tmpdir(), "frameflow-mcp-"));
     process.env.HOME = state.path;
-    delete process.env.XDG_CONFIG_HOME;
-    delete process.env.CLAUDE_CONFIG_DIR;
-    delete process.env.CODEX_HOME;
     delete process.env.GEMINI_API_KEY;
   });
   afterEach(async () => {

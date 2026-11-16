@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import { allowedModelsFor, generatingTools, modelById, models } from "../src/models";
+import { allowedModelsFor, defaultModels, generatingTools, modelById, models } from "../src/models";
+
+test("every tool's built-in default is one of its allowed models", () => {
+  for (const tool of generatingTools) expect(allowedModelsFor(tool)).toContain(defaultModels[tool]);
+});
 
 test("every tool has at least one model and only known ids", () => {
   for (const tool of generatingTools) {

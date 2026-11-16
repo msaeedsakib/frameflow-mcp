@@ -1,13 +1,20 @@
 import { z } from "zod";
-import { allowedModelsFor, generatingTools, type ToolName } from "../models";
+import { allowedModelsFor, defaultModels, modelById, type ToolName } from "../models";
 
-const modelFor = (tool: ToolName) =>
-  z.enum(allowedModelsFor(tool)).optional().describe("Model id. Omit to use the default set with set_default_model.");
+function modelFor(tool: ToolName) {
+  const others = allowedModelsFor(tool)
+    .filter((id) => id !== defaultModels[tool])
+    .map((id) => `${id} (${modelById(id).use})`);
+  const hint = others.length ? ` Override only for a reason: ${others.join("; ")}.` : "";
+  return z.enum(allowedModelsFor(tool)).optional().describe(`Omit to use ${defaultModels[tool]}.${hint}`);
+}
 
 const outputPath = z
   .string()
   .min(1)
-  .describe("Absolute or ~ path to write the result to. Parent directories are created. The extension is corrected to match the returned format.");
+  .describe(
+    "Absolute or ~ path to write the result to: .jpg for images, .mp4 for video, .wav for speech and music (.mp3 with format mp3). Parent directories are created. The extension is corrected to the returned format, so use the path in the response.",
+  );
 const prompt = z.string().min(1);
 const localPath = z.string().min(1);
 
@@ -19,15 +26,10 @@ const imageOptions = {
 const videoOptions = {
   aspect_ratio: z.enum(["16:9", "9:16"]).optional(),
   resolution: z.enum(["360p", "720p", "1080p", "4k"]).optional().describe("Default 720p; 1080p and 4k are upscaled."),
-  duration_seconds: z.number().int().min(3).max(10).optional(),
+  duration_seconds: z.number().int().min(3).max(10).optional().describe("3 to 10 seconds."),
 };
 
 export const listModelsInput = z.object({});
-
-export const setDefaultModelInput = z.object({
-  tool: z.enum(generatingTools),
-  model: z.string().min(1).describe("One of the ids listed by list_models for this tool."),
-});
 
 export const generateImageInput = z.object({
   prompt,
@@ -61,8 +63,8 @@ export const generateVideoFromReferencesInput = z
       .max(3)
       .optional()
       .describe("Local images that must appear in or guide the video: logos, products, characters, style samples."),
-    first_frame_path: localPath.optional(),
-    last_frame_path: localPath.optional(),
+    first_frame_path: localPath.optional().describe("Local image the video must start on."),
+    last_frame_path: localPath.optional().describe("Local image the video must end on."),
     output_path: outputPath,
     model: modelFor("generate_video_from_references"),
     ...videoOptions,
@@ -81,7 +83,10 @@ const videoEdit = {
 export const extendVideoInput = z.object({ ...videoEdit, model: modelFor("extend_video") });
 export const editVideoInput = z.object({ ...videoEdit, model: modelFor("edit_video") });
 
-const voiceName = z.string().min(1).describe("A prebuilt voice name (Kore, Puck, Zephyr, ...) or a custom voice_... id from list_voices.");
+const voiceName = z
+  .string()
+  .min(1)
+  .describe("A prebuilt voice name or a custom voice_... id. Kore and Puck are safe defaults; call list_voices for the full catalog or the user's own voices.");
 
 export const generateSpeechInput = z
   .object({
