@@ -1,6 +1,6 @@
 {
   "name": "@saeedsakib/frameflow-mcp",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "MCP server for Google's Nano Banana, Gemini Omni, Gemini TTS and Lyria models with a Gemini API key",
   "license": "MIT",
   "type": "module",
