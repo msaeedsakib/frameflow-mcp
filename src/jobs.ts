@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { explain } from "./errors";
 import { withExtensionFor, writeOutput } from "./media";
 
 export type JobMedia = { data?: string; uri?: string; mimeType?: string; text?: string };
@@ -44,7 +45,7 @@ export class Jobs {
         job.state = { status: "done", ...written, mime_type: result.media.mimeType, text: result.media.text };
       }
     } catch (error) {
-      job.state = { status: "failed", error: error instanceof Error ? error.message : String(error) };
+      job.state = { status: "failed", error: explain(error) };
     }
     return this.view(job);
   }

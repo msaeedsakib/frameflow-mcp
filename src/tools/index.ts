@@ -1,9 +1,9 @@
 import type { CallToolResult, McpServer } from "@modelcontextprotocol/server";
 import type { Client } from "../clients";
-import { defaultModelFor, loadConfig, setDefaultModel } from "../config";
+import { explain } from "../errors";
 import type { JobPoll, Jobs } from "../jobs";
 import { readInlineMedia } from "../media";
-import { allowedModelsFor, generatingTools, modelById, type Model, type ToolName } from "../models";
+import { defaultModels, generatingTools, modelById, models, type Model, type ModelId, type ToolName } from "../models";
 import * as descriptions from "./descriptions";
 import { generateImage } from "./images";
 import { submitMusic } from "./music";
@@ -15,14 +15,6 @@ import { createVoice, listVoices } from "./voices";
 const readOnly = { readOnlyHint: true, openWorldHint: false };
 const generating = { readOnlyHint: false, destructiveHint: false, openWorldHint: true };
 
-function explain(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  if (/^402\b|PAYMENT_REQUIRED/i.test(message)) {
-    return "402 Payment required: this model needs billing enabled on the Google AI Studio project that owns the API key (aistudio.google.com → Settings → Billing).";
-  }
-  return message;
-}
-
 async function respond(name: string, run: () => Promise<unknown>): Promise<CallToolResult> {
   try {
     return { content: [{ type: "text", text: JSON.stringify(await run(), null, 2) }] };
@@ -32,17 +24,11 @@ async function respond(name: string, run: () => Promise<unknown>): Promise<CallT
   }
 }
 
-async function resolveModel(tool: ToolName, requested: string | undefined): Promise<Model> {
-  const id = requested ?? (await defaultModelFor(tool));
-  if (!id) throw new Error(`No model given and no default set for ${tool}. Call set_default_model first (see list_models).`);
-  const allowed = allowedModelsFor(tool);
-  if (!allowed.includes(id as (typeof allowed)[number])) throw new Error(`${id} is not valid for ${tool}. Allowed: ${allowed.join(", ")}.`);
-  return modelById(id);
-}
+const resolveModel = (tool: ToolName, requested: ModelId | undefined): Model => modelById(requested ?? defaultModels[tool]);
 
 export function registerTools(server: McpServer, client: Client, jobs: Jobs): void {
-  const submitJob = async (tool: ToolName, input: { model?: string; output_path: string }, build: (model: Model) => Promise<JobPoll>) => {
-    const model = await resolveModel(tool, input.model);
+  const submitJob = async (tool: ToolName, input: { model?: ModelId; output_path: string }, build: (model: Model) => Promise<JobPoll>) => {
+    const model = resolveModel(tool, input.model);
     const poll = await build(model);
     return jobs.create({ tool, model: model.id, output_path: input.output_path, poll });
   };
@@ -51,28 +37,19 @@ export function registerTools(server: McpServer, client: Client, jobs: Jobs): vo
     "list_models",
     { description: descriptions.listModels, inputSchema: schemas.listModelsInput, annotations: readOnly },
     () =>
-      respond("list_models", async () => {
-        const { defaults } = await loadConfig();
-        return generatingTools.map((tool) => ({ tool, allowed: allowedModelsFor(tool), default: defaults[tool] ?? null }));
-      }),
-  );
-
-  server.registerTool(
-    "set_default_model",
-    { description: descriptions.setDefaultModel, inputSchema: schemas.setDefaultModelInput, annotations: { readOnlyHint: false, openWorldHint: false } },
-    ({ tool, model }) =>
-      respond("set_default_model", async () => {
-        const allowed = allowedModelsFor(tool);
-        const id = allowed.find((candidate) => candidate === model);
-        if (!id) throw new Error(`${model} is not valid for ${tool}. Allowed: ${allowed.join(", ")}.`);
-        return (await setDefaultModel(tool, id)).defaults;
-      }),
+      respond("list_models", async () =>
+        generatingTools.map((tool) => ({
+          tool,
+          default: defaultModels[tool],
+          models: models.filter((model) => (model.tools as readonly ToolName[]).includes(tool)).map(({ id, label, use }) => ({ id, label, use })),
+        })),
+      ),
   );
 
   server.registerTool(
     "generate_image",
     { description: descriptions.generateImage, inputSchema: schemas.generateImageInput, annotations: generating },
-    (input) => respond("generate_image", async () => generateImage(client, await resolveModel("generate_image", input.model), input)),
+    (input) => respond("generate_image", () => generateImage(client, resolveModel("generate_image", input.model), input)),
   );
 
   server.registerTool(
@@ -124,7 +101,7 @@ export function registerTools(server: McpServer, client: Client, jobs: Jobs): vo
   server.registerTool(
     "generate_speech",
     { description: descriptions.generateSpeech, inputSchema: schemas.generateSpeechInput, annotations: generating },
-    (input) => respond("generate_speech", async () => generateSpeech(client, await resolveModel("generate_speech", input.model), input)),
+    (input) => respond("generate_speech", () => generateSpeech(client, resolveModel("generate_speech", input.model), input)),
   );
 
   server.registerTool(

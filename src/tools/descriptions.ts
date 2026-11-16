@@ -1,38 +1,46 @@
-export const listModels =
-  "List the model ids each tool accepts and the current default for each. Call this first, then set_default_model for any tool whose default is null.";
+export const instructions = `FrameFlow generates images, video, speech and music with Google's Nano Banana, Gemini Omni, Gemini TTS and Lyria models.
 
-export const setDefaultModel =
-  "Persist the default model for a tool so later calls can omit `model`. Validated against the ids from list_models.";
+- Every generating tool writes its result to output_path and returns the final path. Tell the user that path and one line about what was produced.
+- generate_image and generate_speech are synchronous (5-30 s). Video tools and generate_music return a job_id: poll get_job every 10-20 s until done or failed, usually 1-5 minutes. Don't start many jobs at once unless asked.
+- Whenever the user refers to an existing image (logo, brand mark, product, character, style sample, or an image to change), pass its file path so the model sees it; describing it in words does not reproduce it. Ask for the path if you don't know it.
+- Chain by path: generate_image, then animate_image, then extend_video; pair a generate_speech voiceover with a generate_music bed.
+- If a tool or job says the model returned no media or the request was blocked, the safety filter most likely refused it: rephrase the prompt or change the input media rather than retrying as is.
+- Every tool has a sensible default model. Pass model only to override it, as each tool's model parameter describes.
+- Prompts: subject, setting, style, lighting and camera in one or two sentences; add motion and camera movement for video. Quote any text that must appear in an image.
+- Jobs live in server memory. If get_job says the job is unknown, the server restarted: submit it again.`;
+
+export const listModels =
+  "List the model ids each tool accepts, what each is good for, and the default used when model is omitted. Only needed to compare or override models; every tool already works without choosing one.";
 
 export const generateImage =
-  "Create an image from a prompt, optionally guided by existing images. If the user refers to ANY existing image (logo, brand mark, product photo, character, style sample, or an image to modify) pass its file path in reference_image_paths so the model can see it; describing a logo in words is not enough. Up to 14 references. Writes a JPEG to output_path and returns the path.";
+  "Create or edit an image from a prompt, optionally guided by existing images. If the user refers to ANY existing image (logo, brand mark, product photo, character, style sample, or an image to change) pass its file path in reference_image_paths; describing a logo in words is not enough. To change an image, pass it as the only reference and describe just the change. With several references, say in the prompt what each one is in order, e.g. 'Image 1 is the logo, reproduce it exactly. Image 2 is the product.' Writes a JPEG to output_path and returns the path.";
 
 export const generateVideo =
-  "Start a text-only text-to-video job with native audio. If existing images or logos must appear in the video use generate_video_from_references; to animate a specific still use animate_image. Returns a job_id immediately; poll with get_job. The file is written to output_path when done.";
+  "Start a text-to-video job with native audio, from a prompt alone. If existing images or logos must appear use generate_video_from_references; to animate a specific still use animate_image. Mention sounds or dialogue in the prompt if wanted. Returns a job_id immediately; poll with get_job.";
 
 export const animateImage =
-  "Start an image-to-video job where the given local image becomes the first frame and the prompt describes the motion. For images that should merely appear in or guide the video (logos, products, style) use generate_video_from_references instead. Returns a job_id; poll with get_job.";
+  "Start an image-to-video job: the given local image becomes the first frame and the prompt describes the motion. For images that should merely appear in or guide the video (logos, products, style) use generate_video_from_references. Returns a job_id; poll with get_job.";
 
 export const generateVideoFromReferences =
-  "Use when existing images must appear in the video: logos, products, characters or style samples via reference_image_paths (up to 3), and/or an exact first_frame_path and last_frame_path. Returns a job_id; poll with get_job.";
+  "Start a video job when existing images must appear in the video: logos, products, characters or style samples via reference_image_paths (up to 3), and/or an exact first_frame_path and last_frame_path. Say in the prompt what each reference is. Returns a job_id; poll with get_job.";
 
 export const extendVideo =
-  "Start a job that continues an existing local video (max 10s) by up to 10 more seconds, guided by the prompt. Returns a job_id; poll with get_job.";
+  "Start a job that makes an existing local video (10 s or shorter) longer by up to 10 seconds, guided by the prompt. Inputs longer than 10 seconds are rejected, so an extended clip cannot be extended again. Returns a job_id; poll with get_job.";
 
 export const editVideo =
-  "Start a job that edits an existing local video (max 10s) according to the prompt, e.g. change style, weather, or objects. Returns a job_id; poll with get_job.";
+  "Start a job that changes an existing local video (10 s or shorter) according to the prompt, e.g. style, weather or objects. Describe only the change. Returns a job_id; poll with get_job.";
 
 export const generateSpeech =
-  "Turn text into spoken audio (WAV). Use for voiceovers, narration, dialogue, podcast lines or any 'read this aloud'. Single speaker: text + voice (+ optional style). Dialogue: turns + voices with at most 2 prebuilt voices. Custom voices from create_voice or list_voices work for single speaker only. Synchronous; returns the written path.";
+  "Turn text into spoken audio (WAV): voiceovers, narration, dialogue, podcast lines, any 'read this aloud'. Single speaker: text + voice (+ style). Dialogue: turns + voices with at most 2 prebuilt voices. Custom voices from create_voice work for a single speaker only; for a dialogue with a custom voice, generate each turn separately and tell the user the files need joining. Synchronous; returns the written path.";
 
 export const generateMusic =
-  "Start a music generation job: songs with vocals, instrumentals, jingles, loops, background tracks. Everything is driven by the prompt: genre, mood, tempo, instruments, length, and lyrics inline with [Verse]/[Chorus] tags or 'instrumental only'. lyria-3.5 makes full songs; lyria-3-clip-preview makes 30 s clips. Returns a job_id; poll with get_job. Lyrics come back in the job's text.";
+  "Start a music job: songs with vocals, instrumentals, jingles, loops, background tracks. The prompt drives everything: genre, mood, tempo, instruments, structure, length, and lyrics inline with [Verse]/[Chorus]/[Bridge] tags or 'instrumental only'. Lyria 3.5 (default) makes full songs; lyria-3-clip-preview always makes a 30 s clip. Returns a job_id; poll with get_job. Lyrics used come back in the job's text.";
 
 export const createVoice =
-  "Create a reusable custom voice for generate_speech. Voice design: give a name and a description of the voice in words. Voice replication: give a name plus sample_path (the owner speaking) and consent_path (the same person reading Google's consent statement); replication without the owner's consent recording is refused by Google. Returns a voice_... id to pass as `voice`.";
+  "Create a reusable custom voice for generate_speech ('design a voice', 'a voice like…', 'clone my voice'). Design: name + a description of the voice in words. Replication: name + sample_path (the owner speaking) + consent_path (the same person reading Google's consent statement), both WAV. Never replicate a voice without the owner's consent recording; Google refuses it. Returns a voice_... id to pass as voice.";
 
 export const listVoices =
-  "List voices available to generate_speech: the user's custom voices (with voice_... ids and expiry) followed by the prebuilt catalog. Call before picking a voice when the user asks for a specific kind of voice or a voice they created earlier.";
+  "List voices for generate_speech: the user's custom voices (voice_... ids and expiry) followed by the prebuilt catalog. Call when the user wants a specific kind of voice or one they created earlier.";
 
 export const getJob =
   "Check a video or music job. Returns status running, done (with the written path, and lyrics text for music) or failed. Poll every 10-20 seconds; jobs take 1-5 minutes.";
